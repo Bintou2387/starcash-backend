@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- MODELES STARCASH ---
+
+model User {
+  id            String    @id @default(uuid())
+  phoneNumber   String    @unique
+  passwordHash  String
+  fullName      String?
+  email         String?   @unique
+  kycLevel      String    @default("TIER_1")
+  
+  pinCode       String    @default("0000") // Code PIN
+  
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  
+  wallets       Wallet[]
+  usedVouchers  Voucher[] // <--- C'EST CETTE LIGNE QUI MANQUAIT !
+  withdrawals   WithdrawalCode[] // <--- AJOUTE CETTE LIGNE
+}
+
+model Wallet {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  currency    String    @default("MAD")
+  balance     BigInt    @default(0)
+  createdAt   DateTime  @default(now())
+
+  sentTransactions     Transaction[] @relation("SenderWallet")
+  receivedTransactions Transaction[] @relation("ReceiverWallet")
+}
+
+model Transaction {
+  idString          String    @id @default(uuid())
+  amount            BigInt
+  fee               BigInt    @default(0)
+  type              String
+  status            String    @default("PENDING")
+  
+  senderWalletId    String?
+  senderWallet      Wallet?   @relation("SenderWallet", fields: [senderWalletId], references: [id])
+  
+  receiverWalletId  String?
+  receiverWallet    Wallet?   @relation("ReceiverWallet", fields: [receiverWalletId], references: [id])
+
+  createdAt         DateTime  @default(now())
+}
+
+model Voucher {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  amount    BigInt   
+  status    String   @default("VALID") // VALID ou USED
+  
+  usedById  String?
+  usedBy    User?    @relation(fields: [usedById], references: [id])
+  
+  createdAt DateTime @default(now())
+  usedAt    DateTime?
+}
+
+model WithdrawalCode {
+  id        String   @id @default(uuid())
+  code      String   @unique // Le code que l'utilisateur donnera à l'agent (ex: 2289)
+  amount    BigInt   // Montant à retirer
+  expiresAt DateTime // Le code expire après 15 min
+  status    String   @default("PENDING") // PENDING, COMPLETED, EXPIRED
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  
+  createdAt DateTime @default(now())
+}
