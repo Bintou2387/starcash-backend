@@ -48,6 +48,18 @@ export class TransactionsController {
     return this.transactionsService.cancelWithdrawal(body.userId, body.code);
   }
 
+  // ... autres routes ...
+
+  @Post('cards/add')
+  addCard(@Body() body: { userId: string; number: string; holder: string; expiry: string; cvv: string }) {
+    return this.transactionsService.addCard(body.userId, body.number, body.holder, body.expiry, body.cvv);
+  }
+
+  @Get('cards/:userId')
+  getMyCards(@Param('userId') userId: string) {
+    return this.transactionsService.getMyCards(userId);
+  }
+
   @Get('history/:userId')
   getHistory(@Param('userId') userId: string) {
     return this.transactionsService.getMyTransactions(userId);

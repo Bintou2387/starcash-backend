@@ -6,21 +6,27 @@ import { CreateUserDto } from './dto/create-user.dto';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  // 1. Inscription (Créer un user)
+  // 1. Inscription
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
 
-  // 2. Voir tous les users (Pour vérifier)
+  // 2. Mettre à jour la photo (NOUVEAU - Bien placé à l'intérieur)
+  @Post('avatar')
+  updateAvatar(@Body() body: { userId: string; image: string }) {
+    return this.usersService.updateAvatar(body.userId, body.image);
+  }
+
+  // 3. Voir tous les users
   @Get()
   findAll() {
     return this.usersService.findAll();
   }
 
-  // 3. Voir un seul user par son ID
+  // 4. Voir un user par ID
   @Get(':id')
-  findOne(@Param('id') id: string) { // <-- On précise que c'est un String (UUID)
-    return this.usersService.findOne(id); // <-- On a retiré le '+' ici !
+  findOne(@Param('id') id: string) {
+    return this.usersService.findOne(id);
   }
 }

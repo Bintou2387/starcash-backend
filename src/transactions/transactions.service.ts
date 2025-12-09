@@ -189,6 +189,39 @@ export class TransactionsService {
     }, this.transactionOptions); // <--- AJOUT DU TIMEOUT ICI
   }
 
+  // ... après cancelWithdrawal ...
+
+  // --- 9. AJOUTER UNE CARTE BANCAIRE ---
+  async addCard(userId: string, number: string, holder: string, expiry: string, cvv: string) {
+    // Simulation de vérification auprès de la banque (Stripe/CinetPay)
+    if (number.length < 16 || cvv.length < 3) {
+      throw new BadRequestException("Informations de carte invalides");
+    }
+
+    // On détermine la marque (4 = Visa, 5 = Mastercard)
+    const brand = number.startsWith('4') ? 'Visa' : (number.startsWith('5') ? 'Mastercard' : 'Carte');
+    const last4 = number.slice(-4); // On garde juste la fin
+
+    const card = await this.prisma.savedCard.create({
+      data: {
+        userId: userId,
+        brand: brand,
+        last4: last4,
+        holder: holder.toUpperCase()
+      }
+    });
+
+    return { status: 'SUCCESS', message: 'Carte ajoutée avec succès', cardId: card.id };
+  }
+
+  // --- 10. LISTER MES CARTES ---
+  async getMyCards(userId: string) {
+    return await this.prisma.savedCard.findMany({
+      where: { userId: userId },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
   // --- HISTORIQUE ---
   async getMyTransactions(userId: string) {
     const wallet = await this.prisma.wallet.findFirst({ where: { userId } });
